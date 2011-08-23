@@ -1,6 +1,7 @@
 module Wunderlist
   class Task
     ATTRIBUTES = [
+      :id,
       :date,
       :deleted,
       :done,
@@ -64,7 +65,7 @@ module Wunderlist
           data[k.to_sym] = v != '0'
         when 'done_date'
           data[k.to_sym] = v == '0' ? nil : Time.at(v.to_i)
-        when 'name', 'note'
+        when 'name', 'note', 'id'
           data[k.to_sym] = v.to_s
         else
           data[k.to_sym] = v.to_i

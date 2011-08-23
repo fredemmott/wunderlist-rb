@@ -1,6 +1,7 @@
 module Wunderlist
   class List
     ATTRIBUTES = [
+      :id,
       :deleted,
       :inbox,
       :name,
@@ -53,7 +54,7 @@ module Wunderlist
         case k.to_s
         when 'deleted', 'inbox', 'shared'
           data[k.to_sym] = v != '0'
-        when 'name'
+        when 'name', 'id'
           data[:name] = v.to_s
         else
           data[k.to_sym] = v.to_i
