@@ -90,7 +90,7 @@ module Wunderlist
     def run_step_2
       response = @step_1_response
       @user_id = response['user_id'].to_i
-      # FIXME: sync_table (and subs) might not be defined
+      return unless response['sync_table']
       web_sync(
         response['sync_table']['new_lists'],
         self.lists,
@@ -104,6 +104,7 @@ module Wunderlist
     end
 
     def web_sync remote, local, klass
+      return unless remote
       remote.each do |data|
         new = klass.from_sync_data(data)
 
@@ -115,12 +116,12 @@ module Wunderlist
     end
 
     def make_call data
-      post_data = URI.encode_www_form(formify_keys({
+      post_data = formify({
         :email    => @email,
         :password => @password_md5,
         :device   => @options[:app_name],
         :version  => @options[:app_version],
-      }.merge(data)))
+      }.merge(data))
 
       @step_1_post_data = post_data
 
@@ -155,18 +156,33 @@ module Wunderlist
       end
     end
 
-	  def formify_keys data_in, pattern = '%s'
-	    data_out = Hash.new
+	  def formify data_in, pattern = '%s'
+      data_out = Array.new
 	    data_in.each do |k,v|
-	      unless v.is_a? Hash
-	        data_out[pattern % k] = v
-	      else
-	        data_out.merge!(
-            formify_keys(
-              v,
-              "%s[%%s]" % [pattern % k]
-            )
+        case v
+        when Hash
+          data_out += formify(
+            v,
+            "%s[%%s]" % [pattern % k]
           )
+        when Array
+          v.each_with_index do |it, i|
+            case it
+            when Hash
+              data_out += formify(
+                it,
+                "%s[%d][%%s]" % [pattern % k, i]
+              )
+            else
+              data_out.push(URI.encode_www_form(
+                (pattern % k) + ('[%d]' % i) => it
+              ))
+            end
+          end
+        else
+          data_out.push(URI.encode_www_form(
+            (pattern % k) => v
+          ))
 	      end
 	    end
       data_out
