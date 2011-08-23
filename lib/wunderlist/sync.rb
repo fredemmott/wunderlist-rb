@@ -127,9 +127,9 @@ module Wunderlist
     def web_data_list values, keys = nil, &test
       values.select{|x| test.call(x)}.map do |x|
         if keys
-          test.sync_data.select{|k,v| keys.include? k}
+          x.sync_data.select{|k,v| keys.include? k}
         else
-          test.sync_data
+          x.sync_data
         end
       end
     end
