@@ -2,10 +2,16 @@ require 'curb'
 require 'json'
 require 'openssl'
 require 'uri'
-require 'yaml' # DEBUG
 
 module Wunderlist
+  # Strongly based on js/backend/wunderlist.sync.js
+  #
+  # This is where the 'steps' come from.
   class Sync
+    # Debug only, may be removed without warning
+    attr_reader :step_1_response
+    attr_reader :user_id
+
     def initialize email, password, options = {}
       @options = Wunderlist::DEFAULTS.merge(options)
 
@@ -16,12 +22,27 @@ module Wunderlist
         ]
       end
 
-      @email    = email
-      @password = OpenSSL::Digest.hexdigest('md5', password)
+      @email = email
+      if options[:hashed_password]
+        @password_md5 = password
+      else
+        @password_md5 = OpenSSL::Digest.hexdigest('md5', password)
+      end
     end
 
     def sync
-      run_stage_1
+      # Sends:
+      # - Tasks & lists: already synced, id & version
+      # - TODO: New lists
+      # Receives:
+      # - New and updated tasks
+      # - New and updated lists
+      # - TODO: delete_tasks
+      # - Current user id
+      run_step_1
+      # Process step 1 data
+      run_step_2
+      nil
     end
 
     def lists
@@ -34,7 +55,7 @@ module Wunderlist
     attr_writer :lists, :tasks
 
     protected
-    def run_stage_1
+    def run_step_1
       data = {
         :step       => 1,
         :sync_table => {}
@@ -49,27 +70,35 @@ module Wunderlist
         }
       end
 
-      data[:sync_table][:lists] = lists.select do |list|
-        list.online_id.nil? ~~ list.online_id == 0
-      end.map do |list|
-        {
-          :online_id => list.online_id,
-          :version   => list.version,
-        }
+      [:lists, :tasks].each do |table|
+        data[:sync_table][table] = web_data_list(
+          self.send(table),
+          [:online_id, :version]
+        ){|it| it.online_id?}
       end
 
       response = make_call(data)
-      y response
+      @step_1_response = response
+    end
 
+    # Just process the data we received in step 1
+    def run_step_2
+      response = @step_1_response
+      @user_id = response['user_id'].to_i
+      # FIXME: sync_table (and subs) might not be defined
+      # FIXME: need to merge; this incldues updated lists + tasks too
       response['sync_table']['new_lists'].each do |list|
         lists.push Wunderlist::List.from_sync_data(list)
+      end
+      response['sync_table']['new_tasks'].each do |task|
+        tasks.push Wunderlist::Task.from_sync_data(task)
       end
     end
 
     def make_call data
       post_data = URI.encode_www_form(formify_keys({
         :email    => @email,
-        :password => @password,
+        :password => @password_md5,
         :device   => @options[:app_name],
         :version  => @options[:app_version],
       }.merge(data)))
@@ -93,6 +122,16 @@ module Wunderlist
     end
 
 	  private
+    def web_data_list values, keys = nil, &test
+      values.select{|x| test.call(x)}.map do |x|
+        if keys
+          test.sync_data.select{|k,v| keys.include? k}
+        else
+          test.sync_data
+        end
+      end
+    end
+
 	  def formify_keys data_in, pattern = '%s'
 	    data_out = Hash.new
 	    data_in.each do |k,v|

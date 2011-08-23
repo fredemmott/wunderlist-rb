@@ -1,19 +1,26 @@
 module Wunderlist
-  class List
+  class Task
     ATTRIBUTES = [
+      :date,
       :deleted,
-      :inbox,
+      :done,
+      :done_date,
+      :important,
+      :list_id,
       :name,
+      :note,
       :online_id,
       :position,
-      :shared,
+      :push,
+      :push_ts,
       :user_id,
       :version,
     ]
     attr_accessor *ATTRIBUTES
-    alias :deleted? :deleted
-    alias :inbox?   :inbox
-    alias :shared?  :shared
+    alias :deleted?   :deleted
+    alias :done?      :done
+    alias :important? :important
+
     def online_id?
       online_id && online_id != 0
     end
@@ -38,8 +45,10 @@ module Wunderlist
       web_data = Hash.new
       data.each do |k,v|
         case k
-        when :deleted, :inbox, :shared
+        when :deleted, :done, :important, :shared
           web_data[k] = v ? 1 : 0
+        when :done_date
+          web_data[k] = v ? v.to_i : 0
         else
           web_data[k] = v
         end
@@ -51,15 +60,17 @@ module Wunderlist
       data = Hash.new
       web_data.each do |k,v|
         case k.to_s
-        when 'deleted', 'inbox', 'shared'
+        when 'deleted', 'done', 'important', 'shared'
           data[k.to_sym] = v != '0'
-        when 'name'
-          data[:name] = v.to_s
+        when 'done_date'
+          data[k.to_sym] = v == '0' ? nil : Time.at(v.to_i)
+        when 'name', 'note'
+          data[k.to_sym] = v.to_s
         else
           data[k.to_sym] = v.to_i
         end
       end
-      Wunderlist::List.new(data)
+      Wunderlist::Task.new(data)
     end
   end
 end

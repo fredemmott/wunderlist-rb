@@ -23,4 +23,5 @@ module Wunderlist
 end
 
 require 'wunderlist/list'
+require 'wunderlist/task'
 require 'wunderlist/sync'
