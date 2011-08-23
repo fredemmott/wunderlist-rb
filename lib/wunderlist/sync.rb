@@ -33,7 +33,6 @@ module Wunderlist
     def sync
       # Sends:
       # - Tasks & lists: already synced, id & version
-      # - TODO: New lists
       # Receives:
       # - New and updated tasks
       # - New and updated lists
@@ -75,6 +74,9 @@ module Wunderlist
           self.send(table),
           [:online_id, :version]
         ){|it| it.online_id?}
+      end
+      data[:sync_table][:new_lists] = web_data_list(lists) do |list|
+        !(list.deleted? || list.online_id?)
       end
 
       response = make_call(data)
