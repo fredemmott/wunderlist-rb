@@ -33,10 +33,12 @@ module Wunderlist
 
     def sync
       # Sends:
-      # - Tasks & lists: already synced, id & version
+      # - Tasks: Info on those already known
+      # - Lists: Info on those already known, and newly created
       # Receives:
       # - New and updated tasks
       # - New and updated lists
+      # - TODO: synced_lists (id => online_id)
       # - TODO: delete_tasks
       # - Current user id
       run_step_1
