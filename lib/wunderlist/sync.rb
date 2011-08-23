@@ -88,12 +88,26 @@ module Wunderlist
       response = @step_1_response
       @user_id = response['user_id'].to_i
       # FIXME: sync_table (and subs) might not be defined
-      # FIXME: need to merge; this incldues updated lists + tasks too
-      response['sync_table']['new_lists'].each do |list|
-        lists.push Wunderlist::List.from_sync_data(list)
-      end
-      response['sync_table']['new_tasks'].each do |task|
-        tasks.push Wunderlist::Task.from_sync_data(task)
+      web_sync(
+        response['sync_table']['new_lists'],
+        self.lists,
+        Wunderlist::List
+      )
+      web_sync(
+        response['sync_table']['new_tasks'],
+        self.tasks,
+        Wunderlist::Task
+      )
+    end
+
+    def web_sync remote, local, klass
+      remote.each do |data|
+        new = klass.from_sync_data(data)
+
+        old = local.find{|x| x.online_id == new.online_id}
+        local.delete old if old
+
+        local.push new
       end
     end
 
