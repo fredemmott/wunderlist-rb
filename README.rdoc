@@ -3,6 +3,10 @@
 This is a *very* rough work in progress. 'Sync' is not yet accurate - it's
 only reliable for a one-off fetch.
 
+The original (javascript) sync code is here:
+
+https://github.com/6wunderkinder/wunderlist/blob/master/js/backend/wunderlist.sync.js
+
 = Usage
 
  cd lib
