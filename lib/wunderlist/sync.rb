@@ -9,8 +9,9 @@ module Wunderlist
   # This is where the 'steps' come from.
   class Sync
     # Debug only, may be removed without warning
+    attr_reader :step_1_data
+    attr_reader :step_1_post_data
     attr_reader :step_1_response
-    attr_reader :user_id
 
     def initialize email, password, options = {}
       @options = Wunderlist::DEFAULTS.merge(options)
@@ -44,6 +45,7 @@ module Wunderlist
       nil
     end
 
+    attr_reader :user_id
     def lists
       @lists ||= Array.new
     end
@@ -79,6 +81,7 @@ module Wunderlist
         !(list.deleted? || list.online_id?)
       end
 
+      @step_1_data = data
       response = make_call(data)
       @step_1_response = response
     end
@@ -119,6 +122,8 @@ module Wunderlist
         :version  => @options[:app_version],
       }.merge(data)))
 
+      @step_1_post_data = post_data
+
       response = JSON.parse(
         Curl::Easy.http_post(
           @options[:sync_url],
@@ -134,6 +139,8 @@ module Wunderlist
         raise DeniedError.new(response)
       when Wunderlist::StatusCodes::NOT_EXIST
         raise NotExistError.new(response)
+      else
+        raise Wunderlist::Error.new(response)
       end
     end
 
