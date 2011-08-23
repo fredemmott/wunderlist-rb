@@ -1,0 +1,27 @@
+= Overview
+
+This is a *very* rough work in progress. 'Sync' is not yet accurate - it's
+only reliable for a one-off fetch.
+
+= Usage
+
+ cd lib
+ irb
+ ruby-1.9.2-p180 :001 > email = 'foo'
+  => 'foo'
+ ruby-1.9.2-p180 :002 > password = 'bar'
+  => "bar" 
+ ruby-1.9.2-p180 :003 > $LOAD_PATH.push('.')
+  => [...]
+ ruby-1.9.2-p180 :004 > require 'wunderlist'
+  => true 
+ ruby-1.9.2-p180 :005 > wl = Wunderlist::Sync.new(email, password)
+ [...]/wunderlist-rb/lib/wunderlist/sync.rb:20: Please set :app_name and :app_version to non-default values.
+  => #<Wunderlist::Sync:0x00000000a69e60 [...] >
+ ruby-1.9.2-p180 :006 > wl.sync
+  => nil 
+ ruby-1.9.2-p180 :007 > wl.tasks.size
+  => 13 
+ ruby-1.9.2-p180 :008 > wl.lists.size
+  => 3 
+ ruby-1.9.2-p180 :009 > 
