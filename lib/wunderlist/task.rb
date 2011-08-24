@@ -26,6 +26,10 @@ module Wunderlist
       online_id && online_id != 0
     end
 
+    def id?
+      id && id != 0
+    end
+
     def initialize data = {}
       data.each do |k,v|
         self.send("%s=" % k, v) if ATTRIBUTES.include? k

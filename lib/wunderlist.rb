@@ -17,9 +17,15 @@ module Wunderlist
   end
 
   class Error < RuntimeError; end
+
+  # See StatusCodes
   class FailureError < Wunderlist::Error; end
   class DeniedError < Wunderlist::Error; end
   class NotExistError < Wunderlist::Error; end
+
+  # Raised if we get something back from the server that doesn't make
+  # sense with what we have locally
+  class ConsistencyError < Wunderlist::Error; end
 end
 
 require 'wunderlist/list'

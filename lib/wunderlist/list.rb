@@ -15,8 +15,13 @@ module Wunderlist
     alias :deleted? :deleted
     alias :inbox?   :inbox
     alias :shared?  :shared
+
     def online_id?
       online_id && online_id != 0
+    end
+
+    def id?
+      id && id != 0
     end
 
     def initialize data = {}

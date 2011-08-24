@@ -38,7 +38,7 @@ module Wunderlist
       # Receives:
       # - New and updated tasks
       # - New and updated lists
-      # - TODO: synced_lists (id => online_id)
+      # - Lists that were just created by the client
       # - TODO: delete_tasks
       # - Current user id
       run_step_1
@@ -92,17 +92,34 @@ module Wunderlist
     def run_step_2
       response = @step_1_response
       @user_id = response['user_id'].to_i
-      return unless response['sync_table']
+
+      sync_table = response['sync_table']
+      return unless sync_table
+
       web_sync(
-        response['sync_table']['new_lists'],
+        sync_table['new_lists'],
         self.lists,
         Wunderlist::List
       )
       web_sync(
-        response['sync_table']['new_tasks'],
+        sync_table['new_tasks'],
         self.tasks,
         Wunderlist::Task
       )
+
+      if sync_table['synced_lists']
+        sync_table['synced_lists'].each do |hash|
+          hash.each do |id,online_id|
+            local = lists.find{|list| list.id? && list.id == id}
+            unless local
+              raise ConsistencyError.new(
+                "Couldn't find local object for %s => %d" % [id, online_id]
+              )
+            end
+            local.online_id = online_id
+          end
+        end
+      end
     end
 
     def web_sync remote, local, klass
@@ -110,7 +127,9 @@ module Wunderlist
       remote.each do |data|
         new = klass.from_sync_data(data)
 
-        old = local.find{|x| x.online_id == new.online_id}
+        old = local.find do |x|
+          x.online_id? && (x.online_id == new.online_id)
+        end
         local.delete old if old
 
         local.push new
